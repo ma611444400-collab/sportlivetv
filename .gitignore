@@ -1,0 +1,11 @@
+build/
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+*.iml
+.idea/
+node_modules/
+functions/node_modules/
+.firebase/
+firebase-debug.log

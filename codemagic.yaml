@@ -1,0 +1,58 @@
+workflows:
+  sportlivetv-android:
+    name: SportLiveTV - Android Build
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      groups:
+        - firebase_credentials   # holds FIREBASE_OPTIONS_DART_B64 etc, set in Codemagic UI
+      vars:
+        PACKAGE_NAME: "com.yourcompany.sportlivetv"
+    scripts:
+      - name: Restore firebase_options.dart
+        script: |
+          echo $FIREBASE_OPTIONS_DART_B64 | base64 -d > lib/firebase_options.dart
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Build APK
+        script: flutter build apk --release
+      - name: Build AAB
+        script: flutter build appbundle --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/bundle/release/*.aab
+    publishing:
+      email:
+        recipients:
+          - your-email@example.com
+
+  sportlivetv-ios:
+    name: SportLiveTV - iOS Build
+    max_build_duration: 60
+    instance_type: mac_mini_m2
+    integrations:
+      app_store_connect: sportlivetv_app_store_connection  # configure in Codemagic UI: Teams > Integrations
+    environment:
+      flutter: stable
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.yourcompany.sportlivetv
+      groups:
+        - firebase_credentials
+    scripts:
+      - name: Restore firebase_options.dart
+        script: |
+          echo $FIREBASE_OPTIONS_DART_B64 | base64 -d > lib/firebase_options.dart
+      - name: Set up code signing
+        script: xcode-project use-profiles
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Build IPA
+        script: flutter build ipa --release --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

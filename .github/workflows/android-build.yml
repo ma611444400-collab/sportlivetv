@@ -1,0 +1,78 @@
+name: Build Android (APK + AAB)
+
+# Runs on every push to main and on manual trigger.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'android/**'
+  workflow_dispatch:
+
+jobs:
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.22.0'
+          channel: 'stable'
+
+      # --- Restore firebase_options.dart from a GitHub secret ---
+      # Run `flutterfire configure` locally once, base64-encode the resulting
+      # file, and store it as repo secret FIREBASE_OPTIONS_DART_B64:
+      #   base64 -i lib/firebase_options.dart | pbcopy   (or base64 -w0 on Linux)
+      - name: Restore firebase_options.dart
+        run: echo "${{ secrets.FIREBASE_OPTIONS_DART_B64 }}" | base64 -d > lib/firebase_options.dart
+
+      # --- Restore Android keystore for signed release builds ---
+      # Generate once: keytool -genkey -v -keystore release.keystore -alias sportlivetv -keyalg RSA -keysize 2048 -validity 10000
+      # Then: base64 -w0 release.keystore -> store as ANDROID_KEYSTORE_BASE64 secret
+      - name: Restore signing keystore
+        run: |
+          mkdir -p android/keystore
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/keystore/release.keystore
+
+      - name: Create key.properties
+        run: |
+          cat <<EOF > android/key.properties
+          storePassword=${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
+          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storeFile=keystore/release.keystore
+          EOF
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Run analyzer
+        run: flutter analyze || true
+
+      - name: Build APK (release)
+        run: flutter build apk --release
+
+      - name: Build App Bundle (release)
+        run: flutter build appbundle --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sportlivetv-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sportlivetv-release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
