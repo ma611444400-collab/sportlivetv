@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:video_player/video_player.dart';
@@ -21,6 +22,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   bool _hd = true;
+  bool _isLoadingVideo = false;
+  String? _videoError;
 
   @override
   void dispose() {
@@ -30,15 +33,38 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Future<void> _initPlayer(String url) async {
-    _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
-    await _videoController!.initialize();
-    _chewieController = ChewieController(
-      videoPlayerController: _videoController!,
-      autoPlay: true,
-      looping: false,
-      aspectRatio: 16 / 9,
-    );
-    setState(() {});
+    setState(() {
+      _isLoadingVideo = true;
+      _videoError = null;
+    });
+    try {
+      _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
+      await _videoController!.initialize().timeout(
+        const Duration(seconds: 15),
+        onTimeout: () {
+          throw Exception('Video-gu wuu ka qaatay waqti dheer inuu soo shubmo. Hubi internet-kaaga.');
+        },
+      );
+      _chewieController = ChewieController(
+        videoPlayerController: _videoController!,
+        autoPlay: true,
+        looping: false,
+        aspectRatio: _videoController!.value.aspectRatio == 0
+            ? 16 / 9
+            : _videoController!.value.aspectRatio,
+      );
+      setState(() {
+        _isLoadingVideo = false;
+      });
+    } catch (e) {
+      setState(() {
+        _isLoadingVideo = false;
+        _videoError = 'Waa la fashilmay in stream-ka la furo.\n${e.toString()}';
+        _videoController?.dispose();
+        _videoController = null;
+        _chewieController = null;
+      });
+    }
   }
 
   @override
@@ -135,17 +161,68 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       return _lockedOverlay('Stream-kan wali lama heli karo');
     }
 
-    // FREE matches (admin-flagged) skip the premium check entirely.
-    // Everything else requires an active, non-expired Premium subscription.
     final canWatch = match.isFree || (user?.hasActivePremium ?? false);
     if (!canWatch) {
       return _lockedOverlay('Ciyaartan waa Premium — hel subscription si aad u daawato');
     }
 
+    // Error state - show retry button
+    if (_videoError != null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.black87,
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.error_outline, color: AppColors.danger, size: 40),
+                  const SizedBox(height: 12),
+                  Text(_videoError!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                  const SizedBox(height: 16),
+                  ElevatedButton(
+                    onPressed: () {
+                      final url = _hd ? (match.streamUrlHd ?? match.streamUrlSd!) : (match.streamUrlSd ?? match.streamUrlHd!);
+                      _initPlayer(url);
+                    },
+                    child: const Text('Isku day mar kale'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     final url = _hd ? (match.streamUrlHd ?? match.streamUrlSd!) : (match.streamUrlSd ?? match.streamUrlHd!);
-    if (_chewieController == null) {
-      _initPlayer(url);
-      return const AspectRatio(aspectRatio: 16 / 9, child: Center(child: CircularProgressIndicator()));
+
+    // Start loading if not already loading and no controller yet
+    if (_chewieController == null && !_isLoadingVideo) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _initPlayer(url);
+      });
+    }
+
+    if (_isLoadingVideo || _chewieController == null) {
+      return AspectRatio(
+        aspectRatio: 16 / 9,
+        child: Container(
+          color: Colors.black87,
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: AppColors.primary),
+                SizedBox(height: 12),
+                Text('Stream-ka ayaa soo shubmaya...', style: TextStyle(color: Colors.white70)),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     return Column(
@@ -156,9 +233,21 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           child: Row(
             children: [
               const Text('Tayada: '),
-              ChoiceChip(label: const Text('HD'), selected: _hd, onSelected: (_) => setState(() { _hd = true; _chewieController = null; })),
+              ChoiceChip(
+                label: const Text('HD'),
+                selected: _hd,
+                onSelected: (_) {
+                  setState(() { _hd = true; _chewieController = null; _videoError = null; });
+                },
+              ),
               const SizedBox(width: 8),
-              ChoiceChip(label: const Text('SD'), selected: !_hd, onSelected: (_) => setState(() { _hd = false; _chewieController = null; })),
+              ChoiceChip(
+                label: const Text('SD'),
+                selected: !_hd,
+                onSelected: (_) {
+                  setState(() { _hd = false; _chewieController = null; _videoError = null; });
+                },
+              ),
             ],
           ),
         ),
@@ -190,4 +279,3 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     );
   }
 }
-

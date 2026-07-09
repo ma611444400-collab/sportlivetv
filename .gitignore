@@ -9,3 +9,4 @@ node_modules/
 functions/node_modules/
 .firebase/
 firebase-debug.log
+functions/serviceAccountKey.json
