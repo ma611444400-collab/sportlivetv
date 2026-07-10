@@ -50,10 +50,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
 
   void _initYoutubePlayer(String youtubeId) {
     final embedUrl =
-        'https://www.youtube.com/embed/$youtubeId?autoplay=1&playsinline=1&rel=0';
+        'https://www.youtube.com/embed/$youtubeId?autoplay=1&playsinline=1&rel=0&origin=https://www.youtube.com';
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
+      ..setUserAgent('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
       ..loadRequest(Uri.parse(embedUrl));
     setState(() {
       _loadedUrl = youtubeId;
