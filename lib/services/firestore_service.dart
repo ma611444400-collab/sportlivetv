@@ -59,6 +59,28 @@ class FirestoreService {
     });
   }
 
+  // ---------- ADMIN: MATCH MANAGEMENT ----------
+  Stream<List<MatchModel>> streamAllMatchesForAdmin() {
+    return _db
+        .collection('matches')
+        .orderBy('startTime', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => MatchModel.fromMap(d.id, d.data())).toList());
+  }
+
+  Future<void> updateMatch(String matchId, Map<String, dynamic> data) {
+    return _db.collection('matches').doc(matchId).update(data);
+  }
+
+  Future<void> deleteMatch(String matchId) {
+    return _db.collection('matches').doc(matchId).delete();
+  }
+
+  Future<String> addMatch(Map<String, dynamic> data) async {
+    final ref = await _db.collection('matches').add(data);
+    return ref.id;
+  }
+
   // ---------- USER ----------
   Stream<AppUser?> streamUser(String uid) {
     return _db.collection('users').doc(uid).snapshots().map(

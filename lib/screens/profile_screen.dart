@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
+import '../theme/app_theme.dart';
 import 'auth/login_screen.dart';
+import 'admin_matches_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -43,6 +45,17 @@ class ProfileScreen extends StatelessWidget {
                 onChanged: (v) {
                   if (uid != null && v != null) fs.updateLanguage(uid, v);
                 },
+              ),
+            ),
+            Card(
+              color: AppColors.primary,
+              margin: const EdgeInsets.symmetric(vertical: 8),
+              child: ListTile(
+                leading: const Icon(Icons.admin_panel_settings, color: Colors.black),
+                title: const Text('ADMIN — Maamul Ciyaaraha', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminMatchesScreen()),
+                ),
               ),
             ),
             const Divider(),
