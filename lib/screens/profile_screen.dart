@@ -5,6 +5,7 @@ import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 import 'auth/login_screen.dart';
 import 'admin_matches_screen.dart';
+import 'admin_payments_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -49,12 +50,23 @@ class ProfileScreen extends StatelessWidget {
             ),
             Card(
               color: AppColors.primary,
-              margin: const EdgeInsets.symmetric(vertical: 8),
+              margin: const EdgeInsets.symmetric(vertical: 6),
               child: ListTile(
                 leading: const Icon(Icons.admin_panel_settings, color: Colors.black),
                 title: const Text('ADMIN — Maamul Ciyaaraha', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
                 onTap: () => Navigator.of(context).push(
                   MaterialPageRoute(builder: (_) => const AdminMatchesScreen()),
+                ),
+              ),
+            ),
+            Card(
+              color: AppColors.secondary,
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              child: ListTile(
+                leading: const Icon(Icons.payments, color: Colors.white),
+                title: const Text('ADMIN — Xaqiijinta Lacagaha', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const AdminPaymentsScreen()),
                 ),
               ),
             ),

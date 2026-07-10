@@ -81,6 +81,51 @@ class FirestoreService {
     return ref.id;
   }
 
+  // ---------- PAYMENTS: EVC PLUS MANUAL VERIFICATION ----------
+  /// User submits proof of an EVC Plus transfer they made. This creates a
+  /// 'pending' record that only an admin can approve (see approvePayment).
+  Future<void> submitPaymentRequest({
+    required String uid,
+    required String senderPhone,
+    required String transactionId,
+    required double amountUsd,
+  }) {
+    return _db.collection('payments').add({
+      'uid': uid,
+      'method': 'evc_plus',
+      'senderPhone': senderPhone,
+      'transactionId': transactionId,
+      'amountUsd': amountUsd,
+      'status': 'pending',
+      'createdAt': DateTime.now().toIso8601String(),
+    });
+  }
+
+  Stream<List<Map<String, dynamic>>> streamPendingPayments() {
+    return _db
+        .collection('payments')
+        .where('status', isEqualTo: 'pending')
+        .snapshots()
+        .map((snap) => snap.docs.map((d) => {'id': d.id, ...d.data()}).toList());
+  }
+
+  /// Admin approves a payment: marks it approved AND activates premium
+  /// for the user (30 days) in a single call.
+  Future<void> approvePayment(String paymentId, String uid) async {
+    final expires = DateTime.now().add(const Duration(days: 30));
+    final batch = _db.batch();
+    batch.update(_db.collection('payments').doc(paymentId), {'status': 'approved'});
+    batch.update(_db.collection('users').doc(uid), {
+      'isPremium': true,
+      'premiumExpiresAt': expires.toIso8601String(),
+    });
+    await batch.commit();
+  }
+
+  Future<void> rejectPayment(String paymentId) {
+    return _db.collection('payments').doc(paymentId).update({'status': 'rejected'});
+  }
+
   // ---------- USER ----------
   Stream<AppUser?> streamUser(String uid) {
     return _db.collection('users').doc(uid).snapshots().map(

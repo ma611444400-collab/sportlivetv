@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/payment_service.dart';
+import '../services/firestore_service.dart';
 import '../theme/app_theme.dart';
 
 class PremiumScreen extends StatefulWidget {
@@ -10,54 +10,38 @@ class PremiumScreen extends StatefulWidget {
 }
 
 class _PremiumScreenState extends State<PremiumScreen> {
-  final _payments = PaymentService();
-  final _phoneCtrl = TextEditingController();
-  double _price = 0.60;
-  bool _loading = false;
+  final _fs = FirestoreService();
+  final _senderPhoneCtrl = TextEditingController();
+  final _txnIdCtrl = TextEditingController();
+  final double _price = 0.60;
+  static const String evcReceiverNumber = '+252611444400';
+  bool _submitting = false;
   String? _message;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadPrice();
-  }
-
-  Future<void> _loadPrice() async {
-    try {
-      final p = await _payments.getCurrentSubscriptionPrice();
-      setState(() => _price = p);
-    } catch (_) {
-      // fallback to default $0.60 if function unavailable in dev
-    }
-  }
-
-  Future<void> _payWithEvc() async {
-    setState(() { _loading = true; _message = null; });
-    try {
-      final result = await _payments.payWithEvcPlus(
-        phoneNumber: _phoneCtrl.text.trim(),
-        amountUsd: _price,
-      );
-      setState(() => _message = result['message'] ?? 'Codsigii lacag-bixinta waa la diray. Fadlan xaqiiji SMS-kaaga.');
-    } catch (e) {
-      setState(() => _message = 'Khalad ayaa dhacay lacag-bixinta EVC Plus.');
-    } finally {
-      setState(() => _loading = false);
-    }
-  }
-
-  Future<void> _payWithUsdt() async {
+  Future<void> _submit() async {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) return;
-    setState(() { _loading = true; _message = null; });
+    if (_senderPhoneCtrl.text.trim().isEmpty || _txnIdCtrl.text.trim().isEmpty) {
+      setState(() => _message = 'Fadlan buuxi labada goob.');
+      return;
+    }
+    setState(() { _submitting = true; _message = null; });
     try {
-      final result = await _payments.createUsdtPaymentIntent(uid: uid, amountUsd: _price);
-      final address = result['depositAddress'] ?? '—';
-      setState(() => _message = 'U dir $_price USDT (TRC20) ilaa: $address\nKadib xaqiijinta way dhici doontaa otomaatig ahaan.');
+      await _fs.submitPaymentRequest(
+        uid: uid,
+        senderPhone: _senderPhoneCtrl.text.trim(),
+        transactionId: _txnIdCtrl.text.trim(),
+        amountUsd: _price,
+      );
+      setState(() {
+        _message = 'Codsigaaga waa la diray! Admin-ku wuu xaqiijin doonaa lacagta, kadibna Premium-kaagu si otomaatig ah ayuu u furmi doonaa.';
+        _senderPhoneCtrl.clear();
+        _txnIdCtrl.clear();
+      });
     } catch (e) {
-      setState(() => _message = 'Khalad ayaa dhacay USDT payment-ka.');
+      setState(() => _message = 'Khalad ayaa dhacay. Isku day mar kale.');
     } finally {
-      setState(() => _loading = false);
+      setState(() => _submitting = false);
     }
   }
 
@@ -65,7 +49,7 @@ class _PremiumScreenState extends State<PremiumScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Premium')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -81,40 +65,70 @@ class _PremiumScreenState extends State<PremiumScreen> {
                     const SizedBox(height: 8),
                     Text('\$${_price.toStringAsFixed(2)} / bishii', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)),
                     const SizedBox(height: 8),
-                    const Text('Daawo dhammaan ciyaaraha live-ka ah oo aan xayiraan lahayn', textAlign: TextAlign.center),
+                    const Text('Daawo dhammaan ciyaaraha live-ka ah', textAlign: TextAlign.center),
                   ],
                 ),
               ),
             ),
             const SizedBox(height: 24),
-            const Text('Dooro habka lacag-bixinta:', style: TextStyle(fontWeight: FontWeight.bold)),
+            Card(
+              color: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Tallaabo 1: U Dir Lacagta', style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 15)),
+                    const SizedBox(height: 8),
+                    Text(
+                      'U dir \$${_price.toStringAsFixed(2)} (EVC Plus) lambarkan:',
+                      style: const TextStyle(color: Colors.black87),
+                    ),
+                    const SizedBox(height: 4),
+                    SelectableText(
+                      evcReceiverNumber,
+                      style: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 20),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text('Tallaabo 2: Geli Xaqiijinta', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 8),
+            const Text(
+              'Kadib marka aad dirto lacagta, geli lambarkaaga & Transaction ID-ga (ka soo baxa SMS xaqiijinta EVC Plus):',
+              style: TextStyle(color: Colors.grey, fontSize: 13),
+            ),
             const SizedBox(height: 12),
             TextField(
-              controller: _phoneCtrl,
+              controller: _senderPhoneCtrl,
               keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
-                labelText: 'Lambarka EVC Plus (+252...)',
+                labelText: 'Lambarkaaga EVC Plus (aad ka dirtay)',
                 border: OutlineInputBorder(),
               ),
             ),
             const SizedBox(height: 10),
-            ElevatedButton.icon(
-              onPressed: _loading ? null : _payWithEvc,
-              icon: const Icon(Icons.phone_android),
-              label: const Text('Ku bixi EVC Plus'),
-            ),
-            const SizedBox(height: 10),
-            OutlinedButton.icon(
-              onPressed: _loading ? null : _payWithUsdt,
-              icon: const Icon(Icons.currency_bitcoin),
-              label: const Text('Ku bixi USDT (TRC20)'),
-            ),
-            if (_loading) const Padding(padding: EdgeInsets.only(top: 16), child: Center(child: CircularProgressIndicator())),
-            if (_message != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: Text(_message!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.primary)),
+            TextField(
+              controller: _txnIdCtrl,
+              decoration: const InputDecoration(
+                labelText: 'Transaction ID / Reference',
+                border: OutlineInputBorder(),
               ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _submitting ? null : _submit,
+              child: _submitting
+                  ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text('Dir Xaqiijinta'),
+            ),
+            if (_message != null) ...[
+              const SizedBox(height: 16),
+              Text(_message!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.primary)),
+            ],
           ],
         ),
       ),
