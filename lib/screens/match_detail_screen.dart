@@ -49,13 +49,30 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   void _initYoutubePlayer(String youtubeId) {
-    final embedUrl =
-        'https://www.youtube.com/embed/$youtubeId?autoplay=1&playsinline=1&rel=0&origin=https://www.youtube.com';
+    final html = '''
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+  html,body{margin:0;padding:0;background:#000;height:100%;}
+  .wrap{position:relative;width:100%;height:100%;}
+  iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;}
+</style>
+</head>
+<body>
+<div class="wrap">
+<iframe src="https://www.youtube.com/embed/$youtubeId?autoplay=1&playsinline=1&rel=0&modestbranding=1"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  allowfullscreen></iframe>
+</div>
+</body>
+</html>
+''';
     _webViewController = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setBackgroundColor(Colors.black)
-      ..setUserAgent('Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36')
-      ..loadRequest(Uri.parse(embedUrl));
+      ..loadHtmlString(html, baseUrl: 'https://www.youtube.com');
     setState(() {
       _loadedUrl = youtubeId;
       _isLoadingVideo = false;
