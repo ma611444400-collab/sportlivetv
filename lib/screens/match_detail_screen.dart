@@ -1,13 +1,27 @@
-
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 import '../services/firestore_service.dart';
 import '../models/match_model.dart';
 import '../models/user_model.dart';
 import '../theme/app_theme.dart';
 import 'premium_screen.dart';
+
+String? extractYoutubeId(String url) {
+  final patterns = [
+    RegExp(r'youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})'),
+    RegExp(r'youtu\.be/([a-zA-Z0-9_-]{11})'),
+    RegExp(r'youtube\.com/live/([a-zA-Z0-9_-]{11})'),
+    RegExp(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})'),
+  ];
+  for (final p in patterns) {
+    final m = p.firstMatch(url);
+    if (m != null) return m.group(1);
+  }
+  return null;
+}
 
 class MatchDetailScreen extends StatefulWidget {
   final String matchId;
@@ -21,9 +35,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   final _fs = FirestoreService();
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
+  WebViewController? _webViewController;
   bool _hd = true;
   bool _isLoadingVideo = false;
   String? _videoError;
+  String? _loadedUrl;
 
   @override
   void dispose() {
@@ -32,11 +48,31 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     super.dispose();
   }
 
+  void _initYoutubePlayer(String youtubeId) {
+    final embedUrl =
+        'https://www.youtube.com/embed/$youtubeId?autoplay=1&playsinline=1&rel=0';
+    _webViewController = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setBackgroundColor(Colors.black)
+      ..loadRequest(Uri.parse(embedUrl));
+    setState(() {
+      _loadedUrl = youtubeId;
+      _isLoadingVideo = false;
+    });
+  }
+
   Future<void> _initPlayer(String url) async {
     setState(() {
       _isLoadingVideo = true;
       _videoError = null;
     });
+
+    final ytId = extractYoutubeId(url);
+    if (ytId != null) {
+      _initYoutubePlayer(ytId);
+      return;
+    }
+
     try {
       _videoController = VideoPlayerController.networkUrl(Uri.parse(url));
       await _videoController!.initialize().timeout(
@@ -55,6 +91,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       );
       setState(() {
         _isLoadingVideo = false;
+        _loadedUrl = url;
       });
     } catch (e) {
       setState(() {
@@ -166,7 +203,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       return _lockedOverlay('Ciyaartan waa Premium — hel subscription si aad u daawato');
     }
 
-    // Error state - show retry button
     if (_videoError != null) {
       return AspectRatio(
         aspectRatio: 16 / 9,
@@ -198,15 +234,16 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     }
 
     final url = _hd ? (match.streamUrlHd ?? match.streamUrlSd!) : (match.streamUrlSd ?? match.streamUrlHd!);
+    final ytId = extractYoutubeId(url);
 
-    // Start loading if not already loading and no controller yet
-    if (_chewieController == null && !_isLoadingVideo) {
+    final needsLoad = ytId != null ? _loadedUrl != ytId : _loadedUrl != url;
+    if (needsLoad && !_isLoadingVideo) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _initPlayer(url);
       });
     }
 
-    if (_isLoadingVideo || _chewieController == null) {
+    if (_isLoadingVideo || (ytId == null && _chewieController == null) || (ytId != null && _webViewController == null)) {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: Container(
@@ -225,6 +262,27 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       );
     }
 
+    if (ytId != null) {
+      return Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 16 / 9,
+            child: WebViewWidget(controller: _webViewController!),
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              children: [
+                Icon(Icons.smart_display, size: 16, color: Colors.grey),
+                SizedBox(width: 6),
+                Text('Live via YouTube', style: TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return Column(
       children: [
         AspectRatio(aspectRatio: 16 / 9, child: Chewie(controller: _chewieController!)),
@@ -237,7 +295,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 label: const Text('HD'),
                 selected: _hd,
                 onSelected: (_) {
-                  setState(() { _hd = true; _chewieController = null; _videoError = null; });
+                  setState(() { _hd = true; _chewieController = null; _videoError = null; _loadedUrl = null; });
                 },
               ),
               const SizedBox(width: 8),
@@ -245,7 +303,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 label: const Text('SD'),
                 selected: !_hd,
                 onSelected: (_) {
-                  setState(() { _hd = false; _chewieController = null; _videoError = null; });
+                  setState(() { _hd = false; _chewieController = null; _videoError = null; _loadedUrl = null; });
                 },
               ),
             ],
