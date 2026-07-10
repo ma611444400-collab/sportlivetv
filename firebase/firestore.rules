@@ -15,46 +15,42 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    // Users can read/update their own profile only. Admins can read/update any.
     match /users/{uid} {
       allow read: if isOwner(uid) || isAdmin();
       allow create: if isOwner(uid);
-      // Prevent users from granting themselves premium or unblocking themselves
       allow update: if isOwner(uid) &&
         !request.resource.data.diff(resource.data).affectedKeys()
           .hasAny(['isPremium', 'premiumExpiresAt', 'isBlocked']);
       allow update, delete: if isAdmin();
     }
 
-    // Matches: public read (schedules/scores are free), only admin can write.
-    // Stream URLs are still gated client-side + should ideally live in a
-    // separate protected subcollection checked server-side for real security.
     match /matches/{matchId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Teams: public read, admin write.
     match /teams/{teamId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Admin-only config (e.g. subscription price) - not directly client writable.
     match /config/{docId} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Payment records - user can read their own, only Cloud Functions (admin SDK) write.
     match /payments/{paymentId} {
-      allow read: if isSignedIn() && resource.data.uid == request.auth.uid;
-      allow write: if false; // only backend (Cloud Functions) via Admin SDK
+      allow read: if isSignedIn() && (resource.data.uid == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.status == 'pending';
+      allow update: if isAdmin();
+      allow delete: if false;
     }
 
     match /admins/{uid} {
       allow read: if isAdmin();
-      allow write: if false; // manage via Firebase console / Admin SDK only
+      allow write: if false;
     }
   }
 }
