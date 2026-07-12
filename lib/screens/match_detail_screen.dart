@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-import 'package:youtube_player_flutter/youtube_player_flutter.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../services/firestore_service.dart';
 import '../models/match_model.dart';
 import '../models/user_model.dart';
@@ -45,20 +45,22 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   void dispose() {
     _videoController?.dispose();
     _chewieController?.dispose();
-    _ytController?.removeListener(_onYtPlayerStateChanged);
-    _ytController?.dispose();
+    _ytController?.close();
     super.dispose();
   }
 
-  void _onYtPlayerStateChanged() {
-    if (mounted) setState(() {});
-  }
-
   void _initYoutubePlayer(String youtubeId) {
-    _ytController = YoutubePlayerController(
-      initialVideoId: youtubeId,
-      flags: const YoutubePlayerFlags(autoPlay: true, mute: true),
-    )..addListener(_onYtPlayerStateChanged);
+    _ytController = YoutubePlayerController.fromVideoId(
+      videoId: youtubeId,
+      autoPlay: true,
+      params: const YoutubePlayerParams(
+        mute: false,
+        showControls: true,
+        showFullscreenButton: true,
+      ),
+    )..listen((_) {
+        if (mounted) setState(() {});
+      });
     setState(() {
       _loadedUrl = youtubeId;
       _isLoadingVideo = false;
@@ -273,9 +275,6 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
             aspectRatio: 16 / 9,
             child: YoutubePlayer(
               controller: _ytController!,
-              showVideoProgressIndicator: true,
-              progressIndicatorColor: AppColors.primary,
-              onReady: () { _ytController?.play(); },
             ),
           ),
           const Padding(
@@ -291,10 +290,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: Text(
-              'DEBUG: isReady=${_ytController?.value.isReady}, '
-              'state=${_ytController?.value.playerState}, '
-              'hasError=${_ytController?.value.hasError}, '
-              'errorCode=${_ytController?.value.errorCode}',
+              'DEBUG: state=${_ytController?.value.playerState}, '
+              'error=${_ytController?.value.error}',
               style: const TextStyle(color: Colors.redAccent, fontSize: 11),
             ),
           ),
