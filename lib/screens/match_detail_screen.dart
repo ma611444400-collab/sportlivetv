@@ -45,15 +45,20 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   void dispose() {
     _videoController?.dispose();
     _chewieController?.dispose();
+    _ytController?.removeListener(_onYtPlayerStateChanged);
     _ytController?.dispose();
     super.dispose();
+  }
+
+  void _onYtPlayerStateChanged() {
+    if (mounted) setState(() {});
   }
 
   void _initYoutubePlayer(String youtubeId) {
     _ytController = YoutubePlayerController(
       initialVideoId: youtubeId,
       flags: const YoutubePlayerFlags(autoPlay: true, mute: true),
-    );
+    )..addListener(_onYtPlayerStateChanged);
     setState(() {
       _loadedUrl = youtubeId;
       _isLoadingVideo = false;
@@ -280,6 +285,16 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
                 SizedBox(width: 6),
                 Text('Live via YouTube', style: TextStyle(color: Colors.grey, fontSize: 12)),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: Text(
+              'DEBUG: isReady=${_ytController?.value.isReady}, '
+              'state=${_ytController?.value.playerState}, '
+              'hasError=${_ytController?.value.hasError}, '
+              'errorCode=${_ytController?.value.errorCode}',
+              style: const TextStyle(color: Colors.redAccent, fontSize: 11),
             ),
           ),
         ],
