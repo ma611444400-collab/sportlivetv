@@ -275,6 +275,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
               controller: _ytController!,
               showVideoProgressIndicator: true,
               progressIndicatorColor: AppColors.primary,
+              onReady: () { _ytController?.play(); },
             ),
           ),
           const Padding(
