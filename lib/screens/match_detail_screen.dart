@@ -52,7 +52,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   void _initYoutubePlayer(String youtubeId) {
     _ytController = YoutubePlayerController(
       initialVideoId: youtubeId,
-      flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
+      flags: const YoutubePlayerFlags(autoPlay: true, mute: true),
     );
     setState(() {
       _loadedUrl = youtubeId;
