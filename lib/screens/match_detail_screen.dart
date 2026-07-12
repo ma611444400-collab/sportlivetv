@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:video_player/video_player.dart';
 import 'package:chewie/chewie.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../services/firestore_service.dart';
 import '../models/match_model.dart';
 import '../models/user_model.dart';
@@ -35,7 +35,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   final _fs = FirestoreService();
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
-  WebViewController? _webViewController;
+  YoutubePlayerController? _ytController;
   bool _hd = true;
   bool _isLoadingVideo = false;
   String? _videoError;
@@ -45,34 +45,15 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   void dispose() {
     _videoController?.dispose();
     _chewieController?.dispose();
+    _ytController?.dispose();
     super.dispose();
   }
 
   void _initYoutubePlayer(String youtubeId) {
-    final html = '''
-<!DOCTYPE html>
-<html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-  html,body{margin:0;padding:0;background:#000;height:100%;}
-  .wrap{position:relative;width:100%;height:100%;}
-  iframe{position:absolute;top:0;left:0;width:100%;height:100%;border:0;}
-</style>
-</head>
-<body>
-<div class="wrap">
-<iframe src="https://www.youtube.com/embed/$youtubeId?autoplay=1&playsinline=1&rel=0&modestbranding=1"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-  allowfullscreen></iframe>
-</div>
-</body>
-</html>
-''';
-    _webViewController = WebViewController()
-      ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(Colors.black)
-      ..loadHtmlString(html, baseUrl: 'https://www.youtube.com');
+    _ytController = YoutubePlayerController(
+      initialVideoId: youtubeId,
+      flags: const YoutubePlayerFlags(autoPlay: true, mute: false),
+    );
     setState(() {
       _loadedUrl = youtubeId;
       _isLoadingVideo = false;
@@ -261,7 +242,7 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       });
     }
 
-    if (_isLoadingVideo || (ytId == null && _chewieController == null) || (ytId != null && _webViewController == null)) {
+    if (_isLoadingVideo || (ytId == null && _chewieController == null) || (ytId != null && _ytController == null)) {
       return AspectRatio(
         aspectRatio: 16 / 9,
         child: Container(
@@ -285,7 +266,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
         children: [
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: WebViewWidget(controller: _webViewController!),
+            child: YoutubePlayer(
+              controller: _ytController!,
+              showVideoProgressIndicator: true,
+              progressIndicatorColor: AppColors.primary,
+            ),
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
