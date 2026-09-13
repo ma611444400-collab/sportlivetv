@@ -18,6 +18,12 @@ async function assertIsAdmin(context) {
   }
 }
 
+function assertValidAmount(amountUsd) {
+  if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0 || amountUsd > 10000) {
+    throw new functions.https.HttpsError("invalid-argument", "Qiime sax ah geli (0 ilaa 10000 USD).");
+  }
+}
+
 // ---------------------------------------------------------------------------
 // SUBSCRIPTION PRICE (admin can change it any time, default $0.60)
 // ---------------------------------------------------------------------------
@@ -47,9 +53,10 @@ exports.createEvcPlusPayment = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError("unauthenticated", "Waa inaad gashaa.");
   }
   const { phoneNumber, amountUsd } = data;
-  if (!phoneNumber || !amountUsd) {
+  if (typeof phoneNumber !== "string" || phoneNumber.trim().length < 7 || phoneNumber.trim().length > 20) {
     throw new functions.https.HttpsError("invalid-argument", "Lambarka & qiimaha waa loo baahan yahay.");
   }
+  assertValidAmount(amountUsd);
 
   const merchantConfig = functions.config().hormuud || {};
   if (!merchantConfig.merchant_uid || !merchantConfig.api_key) {
@@ -114,7 +121,8 @@ exports.createUsdtPaymentIntent = functions.https.onCall(async (data, context) =
   if (!context.auth) {
     throw new functions.https.HttpsError("unauthenticated", "Waa inaad gashaa.");
   }
-  const { uid, amountUsd } = data;
+  const { amountUsd } = data;
+  assertValidAmount(amountUsd);
   const walletConfig = functions.config().usdt || {};
   if (!walletConfig.deposit_address) {
     throw new functions.https.HttpsError(
@@ -125,7 +133,7 @@ exports.createUsdtPaymentIntent = functions.https.onCall(async (data, context) =
 
   const paymentRef = db.collection("payments").doc();
   await paymentRef.set({
-    uid,
+    uid: context.auth.uid,
     method: "usdt_trc20",
     amountUsd,
     status: "pending",
@@ -146,7 +154,8 @@ exports.createUsdtPaymentIntent = functions.https.onCall(async (data, context) =
  */
 exports.confirmUsdtWebhook = functions.https.onRequest(async (req, res) => {
   const secret = req.headers["x-webhook-secret"];
-  if (secret !== functions.config().usdt.webhook_secret) {
+  const webhookSecret = (functions.config().usdt || {}).webhook_secret;
+  if (!webhookSecret || secret !== webhookSecret) {
     return res.status(401).send("Unauthorized");
   }
   const { paymentId, txHash, confirmed } = req.body;
@@ -155,6 +164,11 @@ exports.confirmUsdtWebhook = functions.https.onRequest(async (req, res) => {
   const paymentRef = db.collection("payments").doc(paymentId);
   const payment = await paymentRef.get();
   if (!payment.exists) return res.status(404).send("Payment not found");
+  if (payment.data().status === "confirmed") return res.status(200).send("Already confirmed");
+  if (payment.data().status !== "pending") return res.status(409).send("Payment is not pending");
+  if (typeof txHash !== "string" || txHash.trim().length < 8) {
+    return res.status(400).send("Invalid transaction hash");
+  }
 
   await paymentRef.update({ status: "confirmed", txHash });
   await activatePremium(payment.data().uid);
@@ -171,8 +185,10 @@ async function activatePremium(uid) {
 }
 
 exports.checkPremiumStatus = functions.https.onCall(async (data, context) => {
-  const { uid } = data;
-  const userDoc = await db.collection("users").doc(uid).get();
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Waa inaad gashaa.");
+  }
+  const userDoc = await db.collection("users").doc(context.auth.uid).get();
   if (!userDoc.exists) return { isPremium: false };
   const u = userDoc.data();
   const isPremium = u.isPremium && (!u.premiumExpiresAt || new Date(u.premiumExpiresAt) > new Date());
