@@ -21,7 +21,12 @@ class ScheduleScreen extends StatelessWidget {
           child: StreamBuilder(
             stream: fs.streamUpcomingMatches(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data == null) {
+                  return const Center(child: Text("Ma jiraan xog ama cillad xiriirka ah."));
+                }
               final matches = snapshot.data!;
               if (matches.isEmpty) return const Center(child: Text('Ma jiraan ciyaaro jadwal ah'));
               return ListView.builder(
