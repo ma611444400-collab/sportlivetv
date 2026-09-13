@@ -2,11 +2,12 @@ name: Deploy Backend (Cloud Functions + Firestore Rules)
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
     paths:
       - 'functions/**'
       - 'firebase/**'
       - 'firebase.json'
+      - '.github/workflows/deploy-backend.yml'
   workflow_dispatch:
 
 jobs:
@@ -22,10 +23,16 @@ jobs:
           node-version: '20'
 
       - name: Install function dependencies
-        run: npm install
-        working-directory: functions
+        run: |
+          cd functions
+          npm ci
 
-      # Generate this token locally with: firebase login:ci
-      # Then store it as the repo secret FIREBASE_TOKEN
       - name: Deploy to Firebase
-        run: npx firebase-tools deploy --only functions,firestore:rules,firestore:indexes,storage --token "${{ secrets.FIREBASE_TOKEN }}" --project "${{ secrets.FIREBASE_PROJECT_ID }}"
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'
+          channelId: live
+          projectId: sportlivetv-3d133
+        env:
+          FIREBASE_CLI_EXPERIMENTS: webframeworks
