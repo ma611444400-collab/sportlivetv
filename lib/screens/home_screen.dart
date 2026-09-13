@@ -121,7 +121,7 @@ class _HomeScreenState extends State<HomeScreen> {
           stream: _fs.streamUpcomingMatches(sport: _selectedSport),
           builder: (context, snapshot) {
             if (!snapshot.hasData) {
-              return const SliverToBoxAdapter(child: Center(child: CircularProgressIndicator()));
+              return const SliverToBoxAdapter(child: Center(child: Text("Ma jiraan ciyaaro live ah ama xog la heli karo.")));
             }
             final matches = snapshot.data!;
             return SliverList(
