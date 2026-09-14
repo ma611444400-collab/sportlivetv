@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/match_model.dart';
 import '../models/team_model.dart';
 import '../models/user_model.dart';
+import '../data/demo_matches.dart';
 
 class FirestoreService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -12,8 +13,12 @@ class FirestoreService {
     if (sport != null && sport != 'all') {
       q = q.where('sport', isEqualTo: sport);
     }
-    return q.snapshots().map((snap) =>
-        snap.docs.map((d) => MatchModel.fromMap(d.id, d.data() as Map<String, dynamic>)).toList());
+    return q.snapshots().map((snap) {
+      final matches = snap.docs
+          .map((d) => MatchModel.fromMap(d.id, d.data() as Map<String, dynamic>))
+          .toList();
+      return matches.isEmpty ? DemoMatches.upcoming(sport: sport) : matches;
+    });
   }
 
   Stream<List<MatchModel>> streamLiveMatches() {
@@ -21,12 +26,15 @@ class FirestoreService {
         .collection('matches')
         .where('status', isEqualTo: 'live')
         .snapshots()
-        .map((snap) => snap.docs.map((d) => MatchModel.fromMap(d.id, d.data())).toList());
+        .map((snap) {
+          final matches = snap.docs.map((d) => MatchModel.fromMap(d.id, d.data())).toList();
+          return matches.isEmpty ? DemoMatches.live() : matches;
+        });
   }
 
   Future<MatchModel?> getMatch(String id) async {
     final doc = await _db.collection('matches').doc(id).get();
-    if (!doc.exists) return null;
+    if (!doc.exists) return DemoMatches.byId(id);
     return MatchModel.fromMap(doc.id, doc.data()!);
   }
 
