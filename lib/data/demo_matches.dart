@@ -66,5 +66,3 @@ class DemoMatches {
     return null;
   }
 }
-EOF
-mkdir -p /home/ubuntu/sportlivetv/lib/data
