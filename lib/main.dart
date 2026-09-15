@@ -6,6 +6,7 @@ import 'theme/app_theme.dart';
 import 'services/notification_service.dart';
 import 'screens/splash_screen.dart';
 import 'firebase_options.dart';
+import 'services/update_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,12 +22,17 @@ class SportLiveTvApp extends StatefulWidget {
 
 class _SportLiveTvAppState extends State<SportLiveTvApp> {
   ThemeMode _themeMode = ThemeMode.dark;
+  final _navigatorKey = GlobalKey<NavigatorState>();
 
   @override
   void initState() {
     super.initState();
     _loadThemePref();
     NotificationService().init(FirebaseAuth.instance.currentUser?.uid);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dialogContext = _navigatorKey.currentContext;
+      if (dialogContext != null) UpdateService.checkAndPrompt(dialogContext);
+    });
   }
 
   Future<void> _loadThemePref() async {
@@ -47,6 +53,7 @@ class _SportLiveTvAppState extends State<SportLiveTvApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: _navigatorKey,
       title: 'SportLiveTV',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,

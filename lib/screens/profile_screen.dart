@@ -7,6 +7,7 @@ import 'auth/login_screen.dart';
 import 'admin_matches_screen.dart';
 import 'admin_payments_screen.dart';
 import 'project_status_screen.dart';
+import '../services/update_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -44,6 +45,12 @@ class ProfileScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (_) => const ProjectStatusScreen()),
                 ),
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.system_update, color: AppColors.primary),
+              title: const Text('Hubi update cusub'),
+              subtitle: const Text('App-ku si otomaatig ah ayuu update u hubiyaa'),
+              onTap: () => UpdateService.checkAndPrompt(context),
             ),
             ListTile(
               leading: const Icon(Icons.language),
