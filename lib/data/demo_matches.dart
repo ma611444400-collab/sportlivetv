@@ -49,6 +49,10 @@ class DemoMatches {
       teamBLogo: _logo,
       startTime: _upcoming,
       status: 'upcoming',
+      streamEnabled: true,
+      isFree: true,
+      streamUrlHd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+      streamUrlSd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
     ),
   ];
 

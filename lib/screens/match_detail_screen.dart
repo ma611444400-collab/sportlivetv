@@ -182,7 +182,8 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   }
 
   Widget _buildStreamArea(MatchModel match, AppUser? user) {
-    final isLive = match.status == 'live';
+    final isDemoPreview = match.id.startsWith('demo_') && match.streamEnabled;
+    final isLive = match.status == 'live' || isDemoPreview;
 
     if (!isLive) {
       return AspectRatio(
