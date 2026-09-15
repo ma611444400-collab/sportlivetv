@@ -33,6 +33,7 @@ class MatchDetailScreen extends StatefulWidget {
 
 class _MatchDetailScreenState extends State<MatchDetailScreen> {
   final _fs = FirestoreService();
+  late Future<MatchModel?> _matchFuture;
   VideoPlayerController? _videoController;
   ChewieController? _chewieController;
   YoutubePlayerController? _ytController;
@@ -40,6 +41,12 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
   bool _isLoadingVideo = false;
   String? _videoError;
   String? _loadedUrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _matchFuture = _fs.getMatch(widget.matchId);
+  }
 
   @override
   void dispose() {
@@ -115,10 +122,33 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
     return FutureBuilder<MatchModel?>(
-      future: _fs.getMatch(widget.matchId),
+      future: _matchFuture,
       builder: (context, matchSnap) {
-        if (!matchSnap.hasData) {
+        if (matchSnap.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
+        }
+        if (matchSnap.hasError || !matchSnap.hasData || matchSnap.data == null) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Match')),
+            body: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.wifi_off, size: 48, color: Colors.grey),
+                    const SizedBox(height: 12),
+                    const Text('Ciyaarta lama soo shubi karin.'),
+                    const SizedBox(height: 12),
+                    ElevatedButton(
+                      onPressed: () => setState(() => _matchFuture = _fs.getMatch(widget.matchId)),
+                      child: const Text('Isku day mar kale'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
         }
         final match = matchSnap.data!;
 
