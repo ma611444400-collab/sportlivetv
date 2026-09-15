@@ -6,6 +6,7 @@ import '../theme/app_theme.dart';
 import 'auth/login_screen.dart';
 import 'admin_matches_screen.dart';
 import 'admin_payments_screen.dart';
+import 'project_status_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -32,6 +33,17 @@ class ProfileScreen extends StatelessWidget {
               leading: Icon(user?.hasActivePremium == true ? Icons.workspace_premium : Icons.lock_outline),
               title: const Text('Xaaladda Premium'),
               subtitle: Text(user?.hasActivePremium == true ? 'Firfircoon' : 'Ma jiro'),
+            ),
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.track_changes, color: AppColors.primary),
+                title: const Text('Horumarka Mashruuca'),
+                subtitle: const Text('Arag waxa la dhammeeyay iyo waxa socda'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const ProjectStatusScreen()),
+                ),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.language),
