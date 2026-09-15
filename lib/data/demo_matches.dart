@@ -1,9 +1,10 @@
 import '../models/match_model.dart';
 
 /// Offline fallback used only when Firestore has no match documents.
-/// The videos are Google's public sample files and are for player testing only.
+/// The video is a public sample used only for player testing.
 class DemoMatches {
   static const _logo = 'https://cdn-icons-png.flaticon.com/512/53/53283.png';
+  static const _testVideo = 'https://media.w3.org/2010/05/sintel/trailer.mp4';
 
   static final List<MatchModel> all = [
     MatchModel(
@@ -20,8 +21,8 @@ class DemoMatches {
       scoreB: 0,
       streamEnabled: true,
       isFree: true,
-      streamUrlHd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      streamUrlSd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      streamUrlHd: _testVideo,
+      streamUrlSd: _testVideo,
       stats: {'Possession Demo FC': '58%', 'Shots on target': 4, 'Corners': 3},
     ),
     MatchModel(
@@ -36,8 +37,8 @@ class DemoMatches {
       status: 'live',
       streamEnabled: true,
       isFree: false,
-      streamUrlHd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-      streamUrlSd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
+      streamUrlHd: _testVideo,
+      streamUrlSd: _testVideo,
     ),
     MatchModel(
       id: 'demo_upcoming',
@@ -51,8 +52,8 @@ class DemoMatches {
       status: 'upcoming',
       streamEnabled: true,
       isFree: true,
-      streamUrlHd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-      streamUrlSd: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
+      streamUrlHd: _testVideo,
+      streamUrlSd: _testVideo,
     ),
   ];
 
@@ -60,9 +61,11 @@ class DemoMatches {
   static final DateTime _upcoming = DateTime.now().add(const Duration(minutes: 10));
 
   static List<MatchModel> live() => all.where((m) => m.status == 'live').toList();
+
   static List<MatchModel> upcoming({String? sport}) => all
       .where((m) => m.status == 'upcoming' && (sport == null || sport == 'all' || m.sport == sport))
       .toList();
+
   static MatchModel? byId(String id) {
     for (final match in all) {
       if (match.id == id) return match;
