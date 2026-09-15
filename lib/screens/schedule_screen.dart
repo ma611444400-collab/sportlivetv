@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/firestore_service.dart';
 import '../widgets/match_card.dart';
+import '../data/demo_matches.dart';
 
 class ScheduleScreen extends StatelessWidget {
   const ScheduleScreen({super.key});
@@ -24,10 +25,9 @@ class ScheduleScreen extends StatelessWidget {
               if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (!snapshot.hasData || snapshot.data == null) {
-                  return const Center(child: Text("Ma jiraan xog ama cillad xiriirka ah."));
-                }
-              final matches = snapshot.data!;
+                final matches = snapshot.hasData && snapshot.data!.isNotEmpty
+                    ? snapshot.data!
+                    : DemoMatches.upcoming();
               if (matches.isEmpty) return const Center(child: Text('Ma jiraan ciyaaro jadwal ah'));
               return ListView.builder(
                 itemCount: matches.length,
