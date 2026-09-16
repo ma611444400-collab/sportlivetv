@@ -33,8 +33,10 @@ class FirestoreService {
   }
 
   Future<MatchModel?> getMatch(String id) async {
+    final demoMatch = DemoMatches.byId(id);
+    if (demoMatch != null) return demoMatch;
     final doc = await _db.collection('matches').doc(id).get();
-    if (!doc.exists) return DemoMatches.byId(id);
+    if (!doc.exists) return null;
     return MatchModel.fromMap(doc.id, doc.data()!);
   }
 
