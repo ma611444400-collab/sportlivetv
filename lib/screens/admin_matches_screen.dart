@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../services/firestore_service.dart';
 import '../models/match_model.dart';
 import '../theme/app_theme.dart';
@@ -106,6 +107,7 @@ class _MatchEditSheetState extends State<_MatchEditSheet> {
   late bool _isFree;
   late bool _streamEnabled;
   bool _saving = false;
+  bool _testingStream = false;
 
   static const _sports = ['football', 'basketball', 'tennis', 'cricket', 'ufc', 'boxing'];
   static const _statuses = ['upcoming', 'live', 'finished'];
@@ -140,6 +142,19 @@ class _MatchEditSheetState extends State<_MatchEditSheet> {
   }
 
   Future<void> _save() async {
+    final hdUrl = _hdUrlCtrl.text.trim();
+    final sdUrl = _sdUrlCtrl.text.trim();
+    if (_streamEnabled && hdUrl.isEmpty && sdUrl.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geli ugu yaraan hal Stream URL')));
+      return;
+    }
+    for (final url in [hdUrl, sdUrl].where((url) => url.isNotEmpty)) {
+      final parsed = Uri.tryParse(url);
+      if (parsed == null || !{'http', 'https'}.contains(parsed.scheme)) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stream URL-ku waa inuu bilaabmaa https://')));
+        return;
+      }
+    }
     setState(() => _saving = true);
     final data = {
       'sport': _sport,
@@ -153,8 +168,8 @@ class _MatchEditSheetState extends State<_MatchEditSheet> {
       'scoreB': int.tryParse(_scoreBCtrl.text) ?? 0,
       'isFree': _isFree,
       'streamEnabled': _streamEnabled,
-      'streamUrlHd': _hdUrlCtrl.text.trim().isEmpty ? null : _hdUrlCtrl.text.trim(),
-      'streamUrlSd': _sdUrlCtrl.text.trim().isEmpty ? null : _sdUrlCtrl.text.trim(),
+      'streamUrlHd': hdUrl.isEmpty ? null : hdUrl,
+      'streamUrlSd': sdUrl.isEmpty ? null : sdUrl,
     };
 
     try {
@@ -174,6 +189,30 @@ class _MatchEditSheetState extends State<_MatchEditSheet> {
       }
     } finally {
       if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _testStream(String url) async {
+    final uri = Uri.tryParse(url.trim());
+    if (uri == null || !{'http', 'https'}.contains(uri.scheme)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Geli URL https ah oo sax ah')));
+      return;
+    }
+    setState(() => _testingStream = true);
+    try {
+      final response = await http.get(uri, headers: {'Range': 'bytes=0-512'}).timeout(const Duration(seconds: 12));
+      final contentType = response.headers['content-type'] ?? '';
+      final looksLikeHls = url.toLowerCase().contains('.m3u8') || response.body.startsWith('#EXTM3U');
+      if ((response.statusCode == 200 || response.statusCode == 206) &&
+          (looksLikeHls || contentType.contains('video') || contentType.contains('mpegurl'))) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stream-ku wuu jawaabay oo waa la tijaabin karaa')));
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Stream-ka wuxuu soo celiyay HTTP ${response.statusCode}')));
+      }
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Stream-ka lama gaari karin; hubi URL-ka iyo rukhsadda')));
+    } finally {
+      if (mounted) setState(() => _testingStream = false);
     }
   }
 
@@ -247,6 +286,16 @@ class _MatchEditSheetState extends State<_MatchEditSheet> {
               controller: _sdUrlCtrl,
               decoration: const InputDecoration(labelText: 'Stream URL (SD)', hintText: 'https://...'),
               maxLines: 2,
+            ),
+            const SizedBox(height: 6),
+            OutlinedButton.icon(
+              onPressed: _testingStream
+                  ? null
+                  : () => _testStream(_hdUrlCtrl.text.trim().isNotEmpty ? _hdUrlCtrl.text : _sdUrlCtrl.text),
+              icon: _testingStream
+                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Icon(Icons.wifi_find),
+              label: const Text('Tijaabi M3U8 / Stream URL'),
             ),
             const SizedBox(height: 8),
             SwitchListTile(
