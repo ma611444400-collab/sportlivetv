@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../services/firestore_service.dart';
 import '../models/match_model.dart';
 import '../theme/app_theme.dart';
+import '../data/demo_matches.dart';
 
 class AdminMatchesScreen extends StatelessWidget {
   const AdminMatchesScreen({super.key});
@@ -22,11 +23,14 @@ class AdminMatchesScreen extends StatelessWidget {
       ),
       body: StreamBuilder<List<MatchModel>>(
         stream: fs.streamAllMatchesForAdmin(),
+        initialData: DemoMatches.all,
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
           }
-          final matches = snapshot.data!;
+          final matches = snapshot.hasData && snapshot.data!.isNotEmpty
+              ? snapshot.data!
+              : DemoMatches.all;
           if (matches.isEmpty) {
             return const Center(child: Text('Ma jiraan ciyaaro. Taabo + si aad u darto.'));
           }
