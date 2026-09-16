@@ -3,7 +3,7 @@ import '../models/match_model.dart';
 /// Offline fallback used only when Firestore has no match documents.
 /// The video is a public sample used only for player testing.
 class DemoMatches {
-  static const _logo = 'https://cdn-icons-png.flaticon.com/512/53/53283.png';
+  static const _logo = 'asset:assets/images/app_logo.png';
   static const _testVideo = 'https://media.w3.org/2010/05/sintel/trailer.mp4';
 
   static final List<MatchModel> all = [

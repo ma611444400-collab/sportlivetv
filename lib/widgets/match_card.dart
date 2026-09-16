@@ -74,12 +74,14 @@ class _TeamLogo extends StatelessWidget {
       child: Column(
         children: [
           ClipOval(
-            child: CachedNetworkImage(
-              imageUrl: url,
-              width: 40,
-              height: 40,
-              errorWidget: (_, __, ___) => const Icon(Icons.shield, size: 40),
-            ),
+            child: url.startsWith('asset:')
+                ? Image.asset(url.substring(6), width: 40, height: 40, fit: BoxFit.cover)
+                : CachedNetworkImage(
+                    imageUrl: url,
+                    width: 40,
+                    height: 40,
+                    errorWidget: (_, __, ___) => const Icon(Icons.shield, size: 40),
+                  ),
           ),
           const SizedBox(height: 4),
           Text(name, textAlign: TextAlign.center, style: const TextStyle(fontSize: 12), maxLines: 1, overflow: TextOverflow.ellipsis),

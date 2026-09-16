@@ -38,7 +38,9 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.sports_soccer, color: AppColors.primary, size: 90),
+              ClipOval(
+                child: Image.asset('assets/images/app_logo.png', width: 112, height: 112, fit: BoxFit.cover),
+              ),
               const SizedBox(height: 16),
               Text(
                 'SportLiveTV',
