@@ -15,11 +15,9 @@ class AdminPaymentsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Xaqiijinta Lacagaha')),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: fs.streamPendingPayments(),
+        initialData: const <Map<String, dynamic>>[],
         builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final payments = snapshot.data!;
+          final payments = snapshot.data ?? const <Map<String, dynamic>>[];
           if (payments.isEmpty) {
             return const Center(child: Text('Ma jiraan lacago sugaya xaqiijin.'));
           }

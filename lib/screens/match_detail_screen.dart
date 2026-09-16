@@ -302,10 +302,11 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
     if (ytId != null) {
       return Column(
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: YoutubePlayer(
-              controller: _ytController!,
+          ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: YoutubePlayer(controller: _ytController!),
             ),
           ),
           const Padding(
@@ -318,21 +319,19 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Text(
-              'DEBUG: state=${_ytController?.value.playerState}, '
-              'error=${_ytController?.value.error}',
-              style: const TextStyle(color: Colors.redAccent, fontSize: 11),
-            ),
-          ),
         ],
       );
     }
 
     return Column(
       children: [
-        AspectRatio(aspectRatio: 16 / 9, child: Chewie(controller: _chewieController!)),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(14),
+            child: AspectRatio(aspectRatio: 16 / 9, child: Chewie(controller: _chewieController!)),
+          ),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(

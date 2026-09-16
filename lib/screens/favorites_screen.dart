@@ -11,15 +11,19 @@ class FavoritesScreen extends StatelessWidget {
     final fs = FirestoreService();
     final uid = FirebaseAuth.instance.currentUser?.uid;
 
+    if (uid == null) {
+      return const Center(child: Text('Fadlan gal si aad u aragto Favorites-kaaga'));
+    }
+
     return StreamBuilder(
-      stream: uid != null ? fs.streamUser(uid) : null,
+      stream: fs.streamUser(uid),
       builder: (context, userSnap) {
         final favIds = userSnap.data?.favoriteTeamIds ?? [];
         return StreamBuilder(
           stream: fs.streamTeams(),
           builder: (context, teamSnap) {
-            if (!teamSnap.hasData) return const Center(child: CircularProgressIndicator());
-            final favTeams = teamSnap.data!.where((t) => favIds.contains(t.id)).toList();
+            final teams = teamSnap.data ?? const <TeamModel>[];
+            final favTeams = teams.where((t) => favIds.contains(t.id)).toList();
             if (favTeams.isEmpty) {
               return const Center(child: Text('Ma haysatid koox aad ku darto favorites'));
             }
