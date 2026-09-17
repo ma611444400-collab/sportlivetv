@@ -1,9 +1,15 @@
+const { onRequest } = require("firebase-functions/v2/https");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
 const axios = require("axios");
 
 admin.initializeApp();
 const db = admin.firestore();
+
+// Beddel oo geli API Key-gaaga API-FOOTBALL (api-sports.io ama RapidAPI)
+const API_KEY = "HALKAN_GELLI_API_KEYGAGA";
+const API_HOST = "v3.football.api-sports.io";
 
 // ---------------------------------------------------------------------------
 // Helper: verify caller is an admin (checked against /admins/{uid} collection)
@@ -22,6 +28,98 @@ function assertValidAmount(amountUsd) {
   if (typeof amountUsd !== "number" || !Number.isFinite(amountUsd) || amountUsd <= 0 || amountUsd > 10000) {
     throw new functions.https.HttpsError("invalid-argument", "Qiime sax ah geli (0 ilaa 10000 USD).");
   }
+}
+
+// ---------------------------------------------------------------------------
+// AUTO-SYNC: API-FOOTBALL to Firestore Matches
+// ---------------------------------------------------------------------------
+exports.syncDailyFixtures = onSchedule("0 2 * * *", async (event) => {
+  await fetchAndSaveFixturesForToday();
+});
+
+exports.manualSyncFixtures = onRequest(async (req, res) => {
+  try {
+    await fetchAndSaveFixturesForToday();
+    res.status(200).json({
+      status: "Success",
+      message: "Ciyaarihii maanta si guul leh ayaa looga soo jiiday API-ga loona geyey Firestore.",
+    });
+  } catch (error) {
+    console.error("Error manual sync:", error);
+    res.status(500).json({
+      status: "Error",
+      message: error.message,
+    });
+  }
+});
+
+async function fetchAndSaveFixturesForToday() {
+  const todayStr = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  console.log(`Syncing fixtures for date: ${todayStr}`);
+
+  const response = await axios.get(`https://${API_HOST}/fixtures`, {
+    params: { date: todayStr },
+    headers: {
+      "x-apisports-key": API_KEY, // Beddel x-rapidapi-key haddii aad ka isticmaasho RapidAPI
+    },
+  });
+
+  const fixtures = response.data.response;
+  if (!fixtures || fixtures.length === 0) {
+    console.log("Ma jiraan ciyaaro maanta la helay.");
+    return;
+  }
+
+  const batch = db.batch();
+  const matchesRef = db.collection("matches");
+
+  for (const item of fixtures) {
+    const matchId = String(item.fixture.id);
+    const docRef = matchesRef.doc(matchId);
+
+    const matchData = {
+      id: matchId,
+      sport: "football",
+      league: {
+        id: item.league.id,
+        name: item.league.name,
+        country: item.league.country,
+        logo: item.league.logo,
+      },
+      teamAName: item.teams.home.name,
+      teamALogo: item.teams.home.logo,
+      teamBName: item.teams.away.name,
+      teamBLogo: item.teams.away.logo,
+      kooxA: item.teams.home.name,
+      kooxALogo: item.teams.home.logo,
+      kooxB: item.teams.away.name,
+      kooxBLogo: item.teams.away.logo,
+      scoreA: item.goals.home ?? 0,
+      scoreB: item.goals.away ?? 0,
+      status: mapStatus(item.fixture.status.short),
+      startTime: item.fixture.date,
+      fixtureDate: item.fixture.date,
+      timestamp: admin.firestore.Timestamp.fromDate(new Date(item.fixture.date)),
+      streamUrlHd: "",
+      streamUrlSd: "",
+      streamEnabled: false,
+      reminderSent: false,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    batch.set(docRef, matchData, { merge: true });
+  }
+
+  await batch.commit();
+  console.log(`Saved ${fixtures.length} matches to Firestore.`);
+}
+
+function mapStatus(shortStatus) {
+  const liveCodes = ["1H", "HT", "2H", "ET", "P", "LIVE"];
+  const finishedCodes = ["FT", "AET", "PEN"];
+  if (liveCodes.includes(shortStatus)) return "live";
+  if (finishedCodes.includes(shortStatus)) return "finished";
+  return "upcoming";
 }
 
 // ---------------------------------------------------------------------------
@@ -45,8 +143,6 @@ exports.changeSubscriptionPrice = functions.https.onCall(async (data, context) =
 
 // ---------------------------------------------------------------------------
 // EVC PLUS (Hormuud) PAYMENT
-// Replace HORMUUD_API_URL / MERCHANT credentials with your real merchant
-// account details, stored securely via `firebase functions:config:set`.
 // ---------------------------------------------------------------------------
 exports.createEvcPlusPayment = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
@@ -62,7 +158,7 @@ exports.createEvcPlusPayment = functions.https.onCall(async (data, context) => {
   if (!merchantConfig.merchant_uid || !merchantConfig.api_key) {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "EVC Plus merchant account lama qeexin. Fadlan isticmaal `firebase functions:config:set hormuud.merchant_uid=... hormuud.api_key=...`"
+      "EVC Plus merchant account lama qeexin."
     );
   }
 
@@ -77,7 +173,6 @@ exports.createEvcPlusPayment = functions.https.onCall(async (data, context) => {
   });
 
   try {
-    // Example call shape only — replace URL/payload with your merchant's actual API docs.
     const response = await axios.post(
       merchantConfig.api_url || "https://api.waafipay.net/asm",
       {
@@ -113,9 +208,6 @@ exports.createEvcPlusPayment = functions.https.onCall(async (data, context) => {
 
 // ---------------------------------------------------------------------------
 // USDT (TRC20) PAYMENT
-// In production, generate a unique deposit address per user (via your wallet
-// provider e.g. TronGrid/BitGo) or use a fixed address + memo-based tracking,
-// then confirm via a blockchain webhook (see confirmUsdtWebhook below).
 // ---------------------------------------------------------------------------
 exports.createUsdtPaymentIntent = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
@@ -127,7 +219,7 @@ exports.createUsdtPaymentIntent = functions.https.onCall(async (data, context) =
   if (!walletConfig.deposit_address) {
     throw new functions.https.HttpsError(
       "failed-precondition",
-      "USDT wallet lama qeexin. Isticmaal `firebase functions:config:set usdt.deposit_address=...`"
+      "USDT wallet lama qeexin."
     );
   }
 
@@ -148,10 +240,6 @@ exports.createUsdtPaymentIntent = functions.https.onCall(async (data, context) =
   };
 });
 
-/**
- * Webhook to be called by your USDT payment processor / blockchain listener
- * once a matching on-chain transaction is confirmed. Activates premium.
- */
 exports.confirmUsdtWebhook = functions.https.onRequest(async (req, res) => {
   const secret = req.headers["x-webhook-secret"];
   const webhookSecret = (functions.config().usdt || {}).webhook_secret;
@@ -215,7 +303,7 @@ exports.expirePremiumSubscriptions = functions.pubsub
   });
 
 // ---------------------------------------------------------------------------
-// ADMIN: manage users (block/unblock, activate/deactivate premium manually)
+// ADMIN: manage users
 // ---------------------------------------------------------------------------
 exports.adminSetUserBlocked = functions.https.onCall(async (data, context) => {
   await assertIsAdmin(context);
@@ -243,8 +331,7 @@ exports.adminSetPremium = functions.https.onCall(async (data, context) => {
 });
 
 // ---------------------------------------------------------------------------
-// ADMIN: broadcast push notification to all users (via FCM topic "all_users")
-// Client apps should subscribe to topic "all_users" on startup.
+// ADMIN: broadcast push notification
 // ---------------------------------------------------------------------------
 exports.adminBroadcastNotification = functions.https.onCall(async (data, context) => {
   await assertIsAdmin(context);
@@ -277,7 +364,7 @@ exports.matchKickoffReminders = functions.pubsub
         topic: `match_${doc.id}`,
         notification: {
           title: "Ciyaartu waa dhawaan bilaabmi",
-          body: `${m.teamAName} vs ${m.teamBName} - 15 daqiiqo kadib`,
+          body: `${m.teamAName || m.kooxA} vs ${m.teamBName || m.kooxB} - 15 daqiiqo kadib`,
         },
       });
       await doc.ref.update({ reminderSent: true });
