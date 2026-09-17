@@ -8,7 +8,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // Beddel oo geli API Key-gaaga API-FOOTBALL (api-sports.io ama RapidAPI)
-const API_KEY = "HALKAN_GELLI_API_KEYGAGA";
+const API_KEY = "278183b2440e54efad50d8fbdcb83b4d";
 const API_HOST = "v3.football.api-sports.io";
 
 // ---------------------------------------------------------------------------
