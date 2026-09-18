@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/firestore_service.dart';
 import '../models/team_model.dart';
+import '../data/global_sports_catalog.dart';
+import 'favorite_teams_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -15,17 +17,38 @@ class FavoritesScreen extends StatelessWidget {
       return const Center(child: Text('Fadlan gal si aad u aragto Favorites-kaaga'));
     }
 
-    return StreamBuilder(
-      stream: fs.streamUser(uid),
-      builder: (context, userSnap) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Favorites'),
+        actions: [
+          IconButton(
+            tooltip: 'Dooro kooxo',
+            icon: const Icon(Icons.add),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FavoriteTeamsScreen())),
+          ),
+        ],
+      ),
+      body: StreamBuilder(
+        stream: fs.streamUser(uid),
+        builder: (context, userSnap) {
         final favIds = userSnap.data?.favoriteTeamIds ?? [];
         return StreamBuilder(
           stream: fs.streamTeams(),
           builder: (context, teamSnap) {
-            final teams = teamSnap.data ?? const <TeamModel>[];
+            final teams = [...(teamSnap.data ?? const <TeamModel>[]), ...GlobalSportsCatalog.teams]
+                .fold<Map<String, TeamModel>>({}, (map, team) {
+                  map[team.id] = team;
+                  return map;
+                })
+                .values
+                .toList();
             final favTeams = teams.where((t) => favIds.contains(t.id)).toList();
             if (favTeams.isEmpty) {
-              return const Center(child: Text('Ma haysatid koox aad ku darto favorites'));
+              return Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                const Text('Ma haysatid koox aad ku darto favorites'),
+                const SizedBox(height: 12),
+                ElevatedButton.icon(onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FavoriteTeamsScreen())), icon: const Icon(Icons.add), label: const Text('Dooro koox')),
+              ]));
             }
             return ListView.builder(
               padding: const EdgeInsets.all(12),
@@ -34,7 +57,8 @@ class FavoritesScreen extends StatelessWidget {
             );
           },
         );
-      },
+        },
+      ),
     );
   }
 

@@ -5,7 +5,7 @@ class TeamModel {
   final String sport;
   final String country;
 
-  TeamModel({
+  const TeamModel({
     required this.id,
     required this.name,
     required this.logoUrl,
