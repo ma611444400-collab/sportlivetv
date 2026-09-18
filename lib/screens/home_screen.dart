@@ -8,6 +8,7 @@ import 'favorites_screen.dart';
 import 'profile_screen.dart';
 import 'premium_screen.dart';
 import 'live_scores_screen.dart';
+import '../widgets/ad_banner.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -99,6 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+        const SliverToBoxAdapter(child: AdBanner()),
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.fromLTRB(16, 16, 16, 4),

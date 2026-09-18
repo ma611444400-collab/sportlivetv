@@ -129,6 +129,7 @@ Meesha aad geliso `streamUrlHd` / `streamUrlSd` ee Admin Panel → **Matches**, 
 - [ ] App icon & splash screen (`assets/images/`) la geliyay — hadda waa placeholder
 - [x] Privacy Policy gudaha app-ka (`Profile → Privacy Policy`); public web policy at `sahalcrypt.com` should be published before store submission
 - [x] Live Scores API: live fixtures, scores, elapsed minutes, goal events, refresh, and team/league search
+- [x] AdMob monetization foundation with test ads, production build defines, and premium ad-free control (`ADMOB_SETUP.md`)
 - [ ] Google Play Console account ($25 hal mar) + AAB upload
 - [ ] Apple Developer account ($99/sano) + Xcode archive + App Store Connect
 

@@ -9,6 +9,7 @@ import 'admin_payments_screen.dart';
 import 'project_status_screen.dart';
 import '../services/update_service.dart';
 import 'privacy_policy_screen.dart';
+import '../services/ad_service.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -62,6 +63,18 @@ class ProfileScreen extends StatelessWidget {
               onTap: () => Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
               ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.block, color: AppColors.primary),
+              title: const Text('Xayeysiiska iyo Premium'),
+              subtitle: const Text('Premium-ku wuxuu kaa qariyaa xayeysiiska'),
+              onTap: () async {
+                final premium = user?.hasActivePremium == true;
+                await AdService.setAdsDisabled(premium);
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(premium ? 'Xayeysiiska waa la qariyay.' : 'Premium ayaa loo baahan yahay si xayeysiiska loo qariyo.')));
+                }
+              },
             ),
             ListTile(
               leading: const Icon(Icons.language),
