@@ -54,7 +54,7 @@ class _SportLiveTvAppState extends State<SportLiveTvApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: _navigatorKey,
-      title: 'SportLiveTV',
+      title: 'SportLiveTV · sahalcrypt.com',
       debugShowCheckedModeBanner: false,
       themeMode: _themeMode,
       darkTheme: AppTheme.dark(),

@@ -127,7 +127,8 @@ Meesha aad geliso `streamUrlHd` / `streamUrlSd` ee Admin Panel → **Matches**, 
 - [ ] EVC Plus merchant credentials la geliyay
 - [ ] USDT wallet address la geliyay
 - [ ] App icon & splash screen (`assets/images/`) la geliyay — hadda waa placeholder
-- [ ] Privacy Policy URL (waajib Google Play & App Store)
+- [x] Privacy Policy gudaha app-ka (`Profile → Privacy Policy`); public web policy at `sahalcrypt.com` should be published before store submission
+- [x] Live Scores API: live fixtures, scores, elapsed minutes, goal events, refresh, and team/league search
 - [ ] Google Play Console account ($25 hal mar) + AAB upload
 - [ ] Apple Developer account ($99/sano) + Xcode archive + App Store Connect
 

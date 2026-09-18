@@ -51,7 +51,13 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Text('SportLiveTV', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('SportLiveTV', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                    Text('by sahalcrypt.com', style: TextStyle(fontSize: 10, color: AppColors.primary)),
+                  ],
+                ),
                 const Spacer(),
                 IconButton(
                   tooltip: 'Live Scores',

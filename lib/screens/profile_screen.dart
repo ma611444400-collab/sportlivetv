@@ -8,6 +8,7 @@ import 'admin_matches_screen.dart';
 import 'admin_payments_screen.dart';
 import 'project_status_screen.dart';
 import '../services/update_service.dart';
+import 'privacy_policy_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -29,6 +30,8 @@ class ProfileScreen extends StatelessWidget {
             const SizedBox(height: 12),
             Center(child: Text(user?.displayName ?? '', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
             Center(child: Text(user?.email ?? user?.phone ?? '', style: const TextStyle(color: Colors.grey))),
+            const SizedBox(height: 4),
+            const Center(child: Text('sahalcrypt.com', style: TextStyle(color: AppColors.primary, fontSize: 12, fontWeight: FontWeight.bold))),
             const SizedBox(height: 24),
             ListTile(
               leading: Icon(user?.hasActivePremium == true ? Icons.workspace_premium : Icons.lock_outline),
@@ -51,6 +54,14 @@ class ProfileScreen extends StatelessWidget {
               title: const Text('Hubi update cusub'),
               subtitle: const Text('App-ku si otomaatig ah ayuu update u hubiyaa'),
               onTap: () => UpdateService.checkAndPrompt(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.privacy_tip_outlined),
+              title: const Text('Privacy Policy'),
+              subtitle: const Text('Sida xogtaada loo ilaaliyo'),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const PrivacyPolicyScreen()),
+              ),
             ),
             ListTile(
               leading: const Icon(Icons.language),

@@ -17,6 +17,7 @@ class _LiveScoresScreenState extends State<LiveScoresScreen> {
   bool _loading = true;
   String? _error;
   DateTime? _updatedAt;
+  String _query = '';
 
   @override
   void initState() {
@@ -52,7 +53,21 @@ class _LiveScoresScreenState extends State<LiveScoresScreen> {
       ),
       body: RefreshIndicator(
         onRefresh: _load,
-        child: _buildBody(),
+        child: Column(children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+            child: TextField(
+              onChanged: (value) => setState(() => _query = value.trim().toLowerCase()),
+              decoration: InputDecoration(
+                hintText: 'Raadi koox ama league',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _query.isEmpty ? null : IconButton(onPressed: () => setState(() => _query = ''), icon: const Icon(Icons.clear)),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+            ),
+          ),
+          Expanded(child: _buildBody()),
+        ]),
       ),
     );
   }
@@ -77,12 +92,18 @@ class _LiveScoresScreenState extends State<LiveScoresScreen> {
         Center(child: Text('Ma jiraan ciyaaro live ah hadda.')),
       ]);
     }
+    final visible = _matches.where((match) {
+      if (_query.isEmpty) return true;
+      final text = '${match.league} ${match.country} ${match.homeName} ${match.awayName}'.toLowerCase();
+      return text.contains(_query);
+    }).toList();
+    if (visible.isEmpty) return ListView(children: const [SizedBox(height: 120), Center(child: Text('Wax natiijo ah lama helin.'))]);
     return ListView.builder(
       padding: const EdgeInsets.all(12),
-      itemCount: _matches.length + 1,
+      itemCount: visible.length + 1,
       itemBuilder: (_, index) {
         if (index == 0) return _updatedLabel();
-        return _scoreCard(_matches[index - 1]);
+        return _scoreCard(visible[index - 1]);
       },
     );
   }
