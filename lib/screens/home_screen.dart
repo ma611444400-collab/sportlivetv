@@ -9,6 +9,7 @@ import 'profile_screen.dart';
 import 'premium_screen.dart';
 import 'live_scores_screen.dart';
 import '../widgets/ad_banner.dart';
+import 'movies_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -23,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   static const _sports = ['all', 'football', 'basketball', 'tennis', 'cricket', 'ufc', 'boxing'];
 
-  final _pages = const [null, ScheduleScreen(), SearchScreen(), FavoritesScreen(), ProfileScreen()];
+  final _pages = const [null, ScheduleScreen(), MoviesScreen(), SearchScreen(), FavoritesScreen(), ProfileScreen()];
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(icon: Icon(Icons.calendar_month), label: 'Jadwalka'),
+          BottomNavigationBarItem(icon: Icon(Icons.movie_outlined), label: 'Movies'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Raadi'),
           BottomNavigationBarItem(icon: Icon(Icons.favorite), label: 'Favorites'),
           BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
