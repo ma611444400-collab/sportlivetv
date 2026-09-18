@@ -7,6 +7,7 @@ import 'search_screen.dart';
 import 'favorites_screen.dart';
 import 'profile_screen.dart';
 import 'premium_screen.dart';
+import 'live_scores_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -52,6 +53,13 @@ class _HomeScreenState extends State<HomeScreen> {
               children: [
                 const Text('SportLiveTV', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                 const Spacer(),
+                IconButton(
+                  tooltip: 'Live Scores',
+                  icon: const Icon(Icons.scoreboard, color: AppColors.primary),
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const LiveScoresScreen()),
+                  ),
+                ),
                 IconButton(
                   icon: const Icon(Icons.workspace_premium, color: AppColors.primary),
                   onPressed: () => Navigator.of(context).push(
