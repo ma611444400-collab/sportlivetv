@@ -1,6 +1,6 @@
 name: Debug APK Build (No Secrets Needed)
 
-# Fudud - waxay samaysaa APK "debug" ah oo aan loo baahnayn keystore/secrets,
+# Fudud - waxay samaysaa APK "debug" ah, iyadoo wadata API-football key-gaaga sirta ah,
 # si aad si degdeg ah u tijaabiso app-ka telefoonkaaga.
 on:
   push:
@@ -30,7 +30,9 @@ jobs:
         run: flutter pub get
 
       - name: Build Debug APK
-        run: flutter build apk --debug
+        env:
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+        run: flutter build apk --debug --dart-define=API_FOOTBALL_KEY="$API_FOOTBALL_KEY"
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
