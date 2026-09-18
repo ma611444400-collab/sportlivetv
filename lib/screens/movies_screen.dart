@@ -59,6 +59,42 @@ class _MoviesScreenState extends State<MoviesScreen> {
     try { detailed = await _tmdb.enrich(movie); } catch (_) {}
     if (mounted) Navigator.of(context).pop();
     if (!mounted) return;
-    showModalBottomSheet(context: context, isScrollControlled: true, builder: (_) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [Text(detailed.title, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold)), const SizedBox(height: 8), Text(detailed.overview.isEmpty ? 'Faahfaahin lama helin.' : detailed.overview, maxLines: 6, overflow: TextOverflow.ellipsis), const SizedBox(height: 16), Wrap(spacing: 10, runSpacing: 8, children: [if (detailed.trailerKey != null) ElevatedButton.icon(onPressed: () => launchUrl(Uri.parse('https://www.youtube.com/watch?v=${detailed.trailerKey}'), mode: LaunchMode.externalApplication), icon: const Icon(Icons.play_arrow), label: const Text('Daawo trailer')), if (detailed.officialWatchUrl != null) OutlinedButton.icon(onPressed: () => launchUrl(Uri.parse(detailed.officialWatchUrl!), mode: LaunchMode.externalApplication), icon: const Icon(Icons.ondemand_video), label: const Text('Daawo si rasmi ah'))])])));
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(detailed.title, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              Text(detailed.overview.isEmpty ? 'Faahfaahin lama helin.' : detailed.overview, maxLines: 6, overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 10,
+                runSpacing: 8,
+                children: [
+                  if (detailed.trailerKey != null)
+                    ElevatedButton.icon(
+                      onPressed: () => launchUrl(Uri.parse('https://www.youtube.com/watch?v=${detailed.trailerKey}'), mode: LaunchMode.externalApplication),
+                      icon: const Icon(Icons.play_arrow),
+                      label: const Text('Daawo trailer'),
+                    ),
+                  if (detailed.officialWatchUrl != null)
+                    OutlinedButton.icon(
+                      onPressed: () => launchUrl(Uri.parse(detailed.officialWatchUrl!), mode: LaunchMode.externalApplication),
+                      icon: const Icon(Icons.ondemand_video),
+                      label: const Text('Daawo si rasmi ah'),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
