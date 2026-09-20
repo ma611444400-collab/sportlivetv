@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../models/live_score_model.dart';
 import '../services/live_score_api.dart';
 import '../theme/app_theme.dart';
@@ -125,10 +126,27 @@ class _LiveScoresScreenState extends State<LiveScoresScreen> {
           const SizedBox(height: 16),
           Row(children: [Expanded(child: _team(match.homeName, match.homeLogo)), Column(children: [Text('${match.homeGoals} - ${match.awayGoals}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)), Text(match.statusShort == 'HT' ? 'HT' : "${match.elapsed}'", style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))]), Expanded(child: _team(match.awayName, match.awayLogo))]),
           if (match.events.isNotEmpty) ...[const Divider(height: 22), Text('${match.events.length} gool/event · taabo si aad u aragto', style: const TextStyle(color: Colors.grey, fontSize: 12))],
+          const SizedBox(height: 10),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: OutlinedButton.icon(
+              onPressed: () => _openOfficialSearch(match),
+              icon: const Icon(Icons.ondemand_video, size: 18),
+              label: const Text('Raadi daawasho rasmi ah'),
+            ),
+          ),
         ]),
       ),
     ),
   );
+
+  Future<void> _openOfficialSearch(LiveScoreModel match) async {
+    final query = Uri.encodeComponent('${match.homeName} vs ${match.awayName} live official');
+    final uri = Uri.parse('https://www.youtube.com/results?search_query=$query');
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication) && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('YouTube lama furin. Fadlan hubi internet-kaaga.')));
+    }
+  }
 
   Widget _team(String name, String logo) => Column(children: [
     logo.isEmpty ? const Icon(Icons.shield, size: 38) : Image.network(logo, width: 38, height: 38, errorBuilder: (_, __, ___) => const Icon(Icons.shield, size: 38)),

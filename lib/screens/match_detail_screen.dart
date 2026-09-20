@@ -227,12 +227,14 @@ class _MatchDetailScreenState extends State<MatchDetailScreen> {
       );
     }
 
-    if (FirebaseAuth.instance.currentUser == null) {
-      return _lockedOverlay('Fadlan gal si aad u daawato');
+    if (!match.streamEnabled || (match.streamUrlHd == null && match.streamUrlSd == null)) {
+      return _lockedOverlay('Link rasmi ah oo daawasho ah wali lama darin');
     }
 
-    if (!match.streamEnabled || (match.streamUrlHd == null && match.streamUrlSd == null)) {
-      return _lockedOverlay('Stream-kan wali lama heli karo');
+    // Free streams are intentionally playable without an account. Premium
+    // streams still require an authenticated user with an active plan.
+    if (!match.isFree && FirebaseAuth.instance.currentUser == null) {
+      return _lockedOverlay('Fadlan gal si aad u daawato ciyaartan Premium');
     }
 
     final canWatch = match.isFree || (user?.hasActivePremium ?? false);
