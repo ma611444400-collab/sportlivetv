@@ -23,7 +23,8 @@ class TmdbService {
     final trailer = videos.firstWhere((v) => v['site'] == 'YouTube' && v['type'] == 'Trailer' && v['official'] == true, orElse: () => videos.firstWhere((v) => v['site'] == 'YouTube' && v['type'] == 'Trailer', orElse: () => <String, dynamic>{}));
     final country = details['watch/providers']?['results']?[region] as Map<String, dynamic>?;
     final providerUrl = country?['link']?.toString();
-    return movie.copyWith(trailerKey: trailer['key']?.toString(), officialWatchUrl: providerUrl);
+    final officialUrl = providerUrl ?? 'https://www.themoviedb.org/movie/${movie.id}/watch?locale=$region';
+    return movie.copyWith(trailerKey: trailer['key']?.toString(), officialWatchUrl: officialUrl);
   }
 
   Future<List<MovieModel>> _movies(String path) async {

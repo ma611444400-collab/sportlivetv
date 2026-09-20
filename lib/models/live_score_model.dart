@@ -60,6 +60,43 @@ class LiveScoreModel {
           .toList(),
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'fixtureId': fixtureId,
+        'league': league,
+        'country': country,
+        'homeName': homeName,
+        'homeLogo': homeLogo,
+        'awayName': awayName,
+        'awayLogo': awayLogo,
+        'status': status,
+        'statusShort': statusShort,
+        'elapsed': elapsed,
+        'homeGoals': homeGoals,
+        'awayGoals': awayGoals,
+        'startTime': startTime.toIso8601String(),
+        'events': events.map((e) => e.toMap()).toList(),
+      };
+
+  factory LiveScoreModel.fromFavoriteMap(Map<String, dynamic> map) => LiveScoreModel(
+        fixtureId: (map['fixtureId'] as num?)?.toInt() ?? 0,
+        league: map['league'] ?? '',
+        country: map['country'] ?? '',
+        homeName: map['homeName'] ?? '',
+        homeLogo: map['homeLogo'] ?? '',
+        awayName: map['awayName'] ?? '',
+        awayLogo: map['awayLogo'] ?? '',
+        status: map['status'] ?? 'Unknown',
+        statusShort: map['statusShort'] ?? 'NS',
+        elapsed: (map['elapsed'] as num?)?.toInt() ?? 0,
+        homeGoals: (map['homeGoals'] as num?)?.toInt() ?? 0,
+        awayGoals: (map['awayGoals'] as num?)?.toInt() ?? 0,
+        startTime: DateTime.tryParse(map['startTime'] ?? '') ?? DateTime.now(),
+        events: (map['events'] as List<dynamic>? ?? [])
+            .whereType<Map<String, dynamic>>()
+            .map(GoalEvent.fromFavoriteMap)
+            .toList(),
+      );
 }
 
 class GoalEvent {
@@ -92,6 +129,24 @@ class GoalEvent {
       detail: map['detail'] ?? '',
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'elapsed': elapsed,
+        'extra': extra,
+        'player': player,
+        'team': team,
+        'type': type,
+        'detail': detail,
+      };
+
+  factory GoalEvent.fromFavoriteMap(Map<String, dynamic> map) => GoalEvent(
+        elapsed: (map['elapsed'] as num?)?.toInt() ?? 0,
+        extra: map['extra']?.toString(),
+        player: map['player'] ?? 'Unknown',
+        team: map['team'] ?? '',
+        type: map['type'] ?? 'Goal',
+        detail: map['detail'] ?? '',
+      );
 }
 
 class StandingRow {

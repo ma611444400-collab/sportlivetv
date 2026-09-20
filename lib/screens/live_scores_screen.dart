@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/live_score_model.dart';
 import '../services/live_score_api.dart';
+import '../services/favorite_match_service.dart';
 import '../theme/app_theme.dart';
 
 class LiveScoresScreen extends StatefulWidget {
@@ -13,7 +14,9 @@ class LiveScoresScreen extends StatefulWidget {
 
 class _LiveScoresScreenState extends State<LiveScoresScreen> {
   final _api = LiveScoreApi();
+  final _favoriteMatches = FavoriteMatchService();
   List<LiveScoreModel> _matches = const [];
+  final Set<int> _favoriteIds = <int>{};
   Timer? _timer;
   bool _loading = true;
   String? _error;
@@ -23,8 +26,14 @@ class _LiveScoresScreenState extends State<LiveScoresScreen> {
   @override
   void initState() {
     super.initState();
+    _loadFavoriteIds();
     _load();
     _timer = Timer.periodic(const Duration(seconds: 30), (_) => _load(silent: true));
+  }
+
+  Future<void> _loadFavoriteIds() async {
+    final saved = await _favoriteMatches.load();
+    if (mounted) setState(() => _favoriteIds.addAll(saved.map((m) => m.fixtureId)));
   }
 
   Future<void> _load({bool silent = false}) async {
@@ -122,7 +131,7 @@ class _LiveScoresScreenState extends State<LiveScoresScreen> {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [Expanded(child: Text('${match.league} · ${match.country}', style: const TextStyle(color: Colors.grey, fontSize: 12))), _statusPill(match)]),
+          Row(children: [Expanded(child: Text('${match.league} · ${match.country}', style: const TextStyle(color: Colors.grey, fontSize: 12))), _statusPill(match), IconButton(tooltip: 'Ku dar Favorites', icon: Icon(_favoriteIds.contains(match.fixtureId) ? Icons.star : Icons.star_border, color: _favoriteIds.contains(match.fixtureId) ? Colors.amber : Colors.grey), onPressed: () => _toggleFavorite(match))]),
           const SizedBox(height: 16),
           Row(children: [Expanded(child: _team(match.homeName, match.homeLogo)), Column(children: [Text('${match.homeGoals} - ${match.awayGoals}', style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold)), Text(match.statusShort == 'HT' ? 'HT' : "${match.elapsed}'", style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold))]), Expanded(child: _team(match.awayName, match.awayLogo))]),
           if (match.events.isNotEmpty) ...[const Divider(height: 22), Text('${match.events.length} gool/event · taabo si aad u aragto', style: const TextStyle(color: Colors.grey, fontSize: 12))],
@@ -170,6 +179,19 @@ class _LiveScoresScreenState extends State<LiveScoresScreen> {
       if (mounted) Navigator.of(context).pop();
       if (mounted) _showEvents(match);
     }
+  }
+
+  Future<void> _toggleFavorite(LiveScoreModel match) async {
+    await _favoriteMatches.toggle(match);
+    if (!mounted) return;
+    setState(() {
+      if (_favoriteIds.contains(match.fixtureId)) {
+        _favoriteIds.remove(match.fixtureId);
+      } else {
+        _favoriteIds.add(match.fixtureId);
+      }
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(_favoriteIds.contains(match.fixtureId) ? 'Ciyaarta Favorites ayaa lagu daray.' : 'Ciyaarta Favorites ayaa laga saaray.')));
   }
 
   void _showEvents(LiveScoreModel match) {

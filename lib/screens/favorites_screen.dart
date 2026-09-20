@@ -4,6 +4,7 @@ import '../services/firestore_service.dart';
 import '../models/team_model.dart';
 import '../data/global_sports_catalog.dart';
 import 'favorite_teams_screen.dart';
+import 'favorite_matches_screen.dart';
 
 class FavoritesScreen extends StatelessWidget {
   const FavoritesScreen({super.key});
@@ -21,6 +22,11 @@ class FavoritesScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Favorites'),
         actions: [
+          IconButton(
+            tooltip: 'Ciyaaraha aan jeclahay',
+            icon: const Icon(Icons.sports_soccer),
+            onPressed: () => Navigator.of(context).push(MaterialPageRoute(builder: (_) => const FavoriteMatchesScreen())),
+          ),
           IconButton(
             tooltip: 'Dooro kooxo',
             icon: const Icon(Icons.add),
