@@ -34,7 +34,7 @@ class TmdbService {
 
   Future<Map<String, dynamic>> _get(String path) async {
     if (!isConfigured) throw const TmdbException('TMDB API key lama gelin. Ku dar TMDB_API_KEY marka la build-gareynayo.');
-    final token = apiKey.trim();
+    final token = _cleanCredential(apiKey);
     // TMDB has two credential formats: the legacy v3 API key and the v4
     // read-access token. Supporting both avoids a confusing 401 when a user
     // copies the API key shown in the TMDB dashboard instead of the token.
@@ -52,6 +52,15 @@ class TmdbService {
     final data = jsonDecode(response.body);
     if (data is! Map<String, dynamic>) throw const TmdbException('TMDB response aan la fahmi karin.');
     return data;
+  }
+
+  String _cleanCredential(String value) {
+    var cleaned = value.trim();
+    if (cleaned.startsWith('TMDB_API_KEY=')) cleaned = cleaned.substring('TMDB_API_KEY='.length).trim();
+    if (cleaned.length >= 2 && ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'")))) {
+      cleaned = cleaned.substring(1, cleaned.length - 1).trim();
+    }
+    return cleaned;
   }
 }
 
