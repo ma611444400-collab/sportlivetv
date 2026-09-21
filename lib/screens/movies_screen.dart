@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import '../models/movie_model.dart';
 import '../services/tmdb_service.dart';
 import '../theme/app_theme.dart';
@@ -59,7 +60,19 @@ class _MoviesScreenState extends State<MoviesScreen> {
     try { detailed = await _tmdb.enrich(movie); } catch (_) {}
     if (mounted) Navigator.of(context).pop();
     if (!mounted) return;
-    showModalBottomSheet(
+    YoutubePlayerController? trailerController;
+    if (detailed.trailerKey != null && detailed.trailerKey!.isNotEmpty) {
+      trailerController = YoutubePlayerController.fromVideoId(
+        videoId: detailed.trailerKey!,
+        autoPlay: false,
+        params: const YoutubePlayerParams(
+          showControls: true,
+          showFullscreenButton: true,
+          strictRelatedVideos: true,
+        ),
+      );
+    }
+    await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       builder: (_) => SafeArea(
@@ -71,6 +84,15 @@ class _MoviesScreenState extends State<MoviesScreen> {
             children: [
               Text(detailed.title, style: const TextStyle(fontSize: 21, fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
+              if (trailerController != null) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: YoutubePlayer(controller: trailerController!),
+                ),
+                const SizedBox(height: 12),
+                const Text('Trailer-ka wuxuu ku ciyaarayaa gudaha app-ka.', style: TextStyle(color: Colors.grey, fontSize: 12)),
+                const SizedBox(height: 8),
+              ],
               Text(detailed.overview.isEmpty ? 'Faahfaahin lama helin.' : detailed.overview, maxLines: 6, overflow: TextOverflow.ellipsis),
               const SizedBox(height: 16),
               Wrap(
@@ -79,9 +101,9 @@ class _MoviesScreenState extends State<MoviesScreen> {
                 children: [
                   if (detailed.trailerKey != null)
                     ElevatedButton.icon(
-                      onPressed: () => launchUrl(Uri.parse('https://www.youtube.com/watch?v=${detailed.trailerKey}'), mode: LaunchMode.externalApplication),
+                      onPressed: () => trailerController?.playVideo(),
                       icon: const Icon(Icons.play_arrow),
-                      label: const Text('Daawo trailer'),
+                      label: const Text('Daawo trailer gudaha app-ka'),
                     ),
                   if (detailed.officialWatchUrl != null)
                     OutlinedButton.icon(
@@ -96,5 +118,6 @@ class _MoviesScreenState extends State<MoviesScreen> {
         ),
       ),
     );
+    trailerController?.close();
   }
 }
